@@ -1,0 +1,484 @@
+ 
+ 
+2 /** 
+3  * A Turing machine (TM) is a very simple kind of computer, 
+4  * but despite its simplicity it can do anything 
+5  * that the computer you are reading this on can 
+6  * (it will probably be slower, but it will work). 
+7  * A TM consists of: 
+8  *     -A tape (the thing on the top with numbers on it). 
+9  *      The tape is divided into infinitely many cells 
+10  *      (the boxes that the numbers are in). 
+11  *      Each cell contains a letter in the tape's alphabet 
+12  *      (the alphabet consists of a blank symbol--here it's 
+13  *      an empty box ("" in the source code) and any number 
+14  *      of other symbols (here, those are "1" and "0"). 
+15  *     -A head (the yellow cell), which is the cell that the 
+16  *      TM is currently looking at. 
+17  *     -A list of states (the left part of the table). 
+18  *      There are a finite number of states, and the 
+19  *      TM starts in the "startcompl1" state. 
+20  *     -A list of instructions (the right part of the table).  
+21  * At each step of execution, the TM looks at the current 
+22  * state, and what is currently on the tape. 
+23  * (It's possible for the machine to never get to the stop 
+24  * state, in which case the TM runs forever.) 
+25  * For more details about TMs, see 
+26  * http://en.wikipedia.org/wiki/Turing_machine 
+27  * algorithm for adding 2 binary numbers: 
+28  * http://courses.washington.edu/css502/zander/Notes/14langTuringEx.pdf 
+29  */ 
+30 
+ 
+31 // Input to this machine: 2 binary numbers. 
+32 // Output: a null number and the sum of the 2 numbers. 
+33 var addOneMachine = {}; 
+34 /** The states in the machine. 
+35  * Change this to make the machine do whatever you want. 
+36  */ 
+37 addOneMachine.stateTransition = { 
+38     "startadd": { // Move to the right side of the number 
+39         // If we're in state "startadd" and see "0", then 
+40         // write "0", move to the right, and go to state 
+41         // "startadd" 
+42         "0": ["0", "right", "startadd"], 
+43         "1" : ["1", "right", "startadd"], 
+44         // If we're in state "startadd" and see "" (empty box), 
+45         // then write "", move to the left, and go to state 
+46         // "add" 
+47         "": ["", "left", "add"], 
+48     }, 
+49      
+50     "transition": { // Transition from a number to the other 
+51         // If we're in state "transition" and see "0", then 
+52         // write "0", move to the right, and go to state 
+53         // "transition" 
+54         "0": ["0", "right", "transition"], 
+55         "1" : ["1", "right", "transition"], 
+56         // If we're in state "transition" and see "" (empty box), 
+57         // then write "", move to the right, and go to state 
+58         // "startadd" 
+59         "": ["", "right", "startadd"], 
+60     }, 
+61      
+62     "startcompl1": { // Starts the state determining the complement of a number, needed for substraction 
+63         "0": ["0", "right", "startcompl1"], 
+64         "1" : ["1", "right", "startcompl1"], 
+65         // If we're in state "startcompl1" and see "" (empty box), 
+66         // then write "", move to the left, and go to state 
+67         // "compl1" 
+68         "": ["", "left", "compl1"], 
+69     }, 
+70      
+71     "startcompl2": { // Starts the state determining for the second time the complement of a number, needed for substraction 
+72         "0": ["0", "right", "startcompl2"], 
+73         "1" : ["1", "right", "startcompl2"], 
+74         // If we're in state "startcompl2" and see "" (empty box), 
+75         // then write "", move to the left, and go to state 
+76         // "compl2" 
+77         "": ["", "left", "compl2"], 
+78     }, 
+79      
+80      "compl1": {  //returns the complement of our number 
+81         "0":["1","left","compl1"], 
+82         "1":["0","left","compl1"], 
+83         //if we're in this state and see "", we start the complement's add 
+84         "": ["", "right", "startcadd"], 
+85      }, 
+86       
+87      "compl2": { 
+88         //returns for the second time the complement of our number 
+89         "0":["1","left","compl2"], 
+90         "1":["0","left","compl2"], 
+91         //after determining for the second time the complement 
+92         //we pass to the transitioon to get to the second number 
+93         "": ["", "right", "transition"], 
+94      }, 
+95       
+96      "startcadd": {  
+97          //starts the +1 add of the complement 
+98         "0": ["0", "right", "startcadd"], 
+99         "1" : ["1", "right", "startcadd"], 
+100         "": ["", "left", "cadd"], 
+101     }, 
+102       
+103      "cadd": { 
+104          //adds 1 to the complement of the number 
+105          "0": ["1", "right", "startcompl2"], 
+106          "1" : ["0", "left", "cadd"], 
+107          //after the add, we pass to the second determination of the complement 
+108          "": ["", "right", "compl2"], 
+109           
+110      }, 
+111       
+112     "add": { 
+113         // 0 + 1 = 1. We're done adding because there's no 
+114         // carry 
+115         "0": ["1", "left", "done"], 
+116         // 1 + 1 = 10 in binary. So, we need to write down 
+117         // "0" and carry the 1. 
+118         "1": ["0", "left", "add"], 
+119         // We had to carry all the way to the left side of 
+120         // the number. Finish carrying. 
+121         "": ["1", "left", "done"] 
+122     }, 
+123      
+124     "done": { 
+125     // Move all the way to the leftmost digit of this number 
+126         "0": ["0", "left", "done"], 
+127         "1": ["1", "left", "done"], 
+128         "": ["", "left", "done_round"] 
+129     }, 
+130      
+131      "done_round": { 
+132     // Move all the way to the leftmost digit of the sequence 
+133         "0": ["0", "left", "done_round"], 
+134         "1": ["1", "left", "done_round"], 
+135     //at the end, we start another round 
+136         "": ["", "right", "startcompl1"] 
+137     }, 
+138     "stop": {}  // Don't do anything else. 
+139 }; 
+140 // The list of symbols that can be on the tape. 
+141 // Change this to be whatever you want. 
+142 addOneMachine.alphabet = ["0", "1", ""]; 
+143 // The starting value of the tape. 
+144 // Change to the input you want to give to the Turing Machine 
+145 var a="101"; 
+146 var b="010"; 
+147 addOneMachine.startTape = a+" "+b; 
+148 // Variables representing the Turing Machine before it runs 
+149 ///////////////////////////////////////////////////////////// 
+150 // Be careful when changing anything below this line! 
+151 addOneMachine.position = 0; 
+152 addOneMachine.state = "startcompl1"; 
+153 addOneMachine.negArr = []; 
+154 addOneMachine.posArr = []; 
+155 // Variables controlling the graphics of the turing machine 
+156 addOneMachine.boxWidth = 25; 
+157 addOneMachine.boxHeight = 25; 
+158 addOneMachine.startHeight = 0; 
+159 addOneMachine.numberHeight = addOneMachine.startHeight + 50; 
+160 addOneMachine.center = 0; 
+161 /** 
+162  * Returns true if the given character is in the given 
+163  * Turing Machine's alphabet and false otherwise. 
+164  */ 
+165 var isValidChar = function(c, turingMachine){ 
+166     for(var l in turingMachine.alphabet){ 
+167         if (turingMachine.alphabet[l] === str(c)){ 
+168             return true; 
+169         } 
+170     } 
+171     return false; 
+172 }; 
+173 
+ 
+174 /** 
+175  * Given a string representing the desired tape state, 
+176  * and a Turing Machine, set the Turing Machine's tape 
+177  * to the state represented in the string. 
+178  */ 
+179 var setTape = function(tape, turingMachine){ 
+180     turingMachine.negArr = []; 
+181     turingMachine.posArr = []; 
+182     var i = 0; 
+183     for (var c in tape){ 
+184         if (isValidChar(tape[c], turingMachine)){ 
+185             turingMachine.posArr[i] = tape[c]; 
+186         } else{ 
+187             turingMachine.posArr[i] = ""; 
+188         } 
+189         i += 1; 
+190     } 
+191     return turingMachine; 
+192 }; 
+193 
+ 
+194 /** 
+195  * Draw the given number to the screen at the given point. 
+196  * If the numbers are too long, shift every other one down 
+197  * to make it easier to read. 
+198  */ 
+199 var drawNum = function(num, x, y) { 
+200     fill(0, 0, 0);  // Black text 
+201     textSize(12); 
+202     // Move numbers down if they'd collide with other numbers 
+203     if (str(num).length >= 3 && num % 2 !== 0) { 
+204         text(num, x, y + 10); 
+205     } else { 
+206         text(num, x, y); 
+207     } 
+208 }; 
+209 
+ 
+210 /** 
+211  * Draw a helpful number line to label the tape boxes, 
+212  * given an offset from zero and a Turing Machine 
+213  */ 
+214 var numberLine = function(offset, turingMachine) { 
+215     var y = turingMachine.numberHeight; 
+216     // The x pixel of the first number at least 0 
+217     var x = width/2 + (offset * turingMachine.boxWidth); 
+218     var i = 0; 
+219     while (x < width){ 
+220         drawNum(i, x + 8, y); 
+221         x += turingMachine.boxWidth; 
+222         i += 1; 
+223     } 
+224      
+225     x = width/2 + ((offset - 1) * turingMachine.boxWidth); 
+226     i = -1; 
+227     while (x > 0 - turingMachine.boxWidth) { 
+228         drawNum(i, x + 3 , y); 
+229         x -= turingMachine.boxWidth; 
+230         i -= 1; 
+231     } 
+232 }; 
+233 
+ 
+234 /** 
+235  * Draw a single box on the TM tape, 
+236  * at position (x, turingMachine.startHeight) 
+237  * with contents given by contents, on the turing machine  
+238  * given by turingMachine. 
+239  * If highlight is true, make the box background yellow. 
+240  */ 
+241 var drawBox = function(x, contents, turingMachine, highlight){ 
+242      // Should we highlight the box? 
+243      if (highlight){ 
+244          fill(255, 255, 0); 
+245      } else{ 
+246           fill(255, 255, 255); 
+247      } 
+248      // Draw the box itself. 
+249      rect(x, 
+250         turingMachine.startHeight, 
+251         turingMachine.boxWidth, 
+252         turingMachine.boxHeight); 
+253      // Draw the box's contents. 
+254      fill(0, 0, 0); 
+255      textSize(18); 
+256      text(contents, x + 8, turingMachine.startHeight + 21); 
+257 }; 
+258 
+ 
+259 /** 
+260  * Given a turing machine, draw its tape. 
+261  * center is the number that's in 
+262  * the middle of the screen 
+263  */ 
+264 var drawTape = function(turingMachine, newCenter) { 
+265     background(255, 255, 255); // clear screen 
+266 
+ 
+267     // makes the code easier to read 
+268     var boxWidth = turingMachine.boxWidth; 
+269     var startHeight = turingMachine.startHeight; 
+270     var numberHeight = turingMachine.numberHeight; 
+271      
+272     // Only move tape if we're a few away from the center 
+273     var center = turingMachine.center; 
+274     if (abs(newCenter - turingMachine.center) > 5){ 
+275         center = newCenter; 
+276         turingMachine.center = newCenter; 
+277     } 
+278      
+279     // Divider between tape and the state table 
+280     if (center <= -3 || center >= 94){ 
+281         line(0, numberHeight + 15, 400, numberHeight + 15);  
+282     } else{ 
+283         line(0, numberHeight + 5, 400, numberHeight +  5); 
+284     } 
+285      
+286     // If we want the center to be -3, we should move 
+287     // the tape 3 to the right. 
+288     var offset = -center; 
+289     // the pixel location of box 0. 
+290     var zeroPosition = width/2 + (offset * boxWidth); 
+291     for (var i = 0; i < turingMachine.posArr.length; i += 1){ 
+292         drawBox( 
+293             zeroPosition + (i * boxWidth), 
+294             turingMachine.posArr[i], 
+295             turingMachine, 
+296             i === turingMachine.position); 
+297     } 
+298      
+299     // Draw in extra boxes to the far right of the screen 
+300     // to make it look like the tape is infinite 
+301     while (i * boxWidth < width - zeroPosition){ 
+302         drawBox( 
+303             zeroPosition + (i * boxWidth), 
+304             "", 
+305             turingMachine, 
+306             i === turingMachine.position); 
+307         i += 1; 
+308     } 
+309      
+310     // Draw the left part of the tape. 
+311     for (var j = 0; j < turingMachine.negArr.length; j += 1) { 
+312         drawBox( 
+313             zeroPosition - ((j + 1) * boxWidth), 
+314             turingMachine.negArr[j], 
+315             turingMachine, 
+316             j + 1 === -turingMachine.position);    
+317     } 
+318     // fill in with empty boxes until the far 
+319     // left of the screen. 
+320     while ((j - 1) * boxWidth < zeroPosition) { 
+321         drawBox( 
+322             zeroPosition - ((j + 1) * boxWidth), 
+323             "", 
+324             turingMachine, 
+325             j + 1 === -turingMachine.position); 
+326         j += 1;  
+327     } 
+328     // Draw the number line. 
+329     numberLine(offset, turingMachine); 
+330 }; 
+331 
+ 
+332 /** 
+333  * Given a Turing Machine and a direction to move, 
+334  * move one space in that direction. 
+335  */ 
+336 var move = function(turingMachine, direction){ 
+337     if (direction === "right") { 
+338         turingMachine.position += 1; 
+339     } else if (direction === "left") { 
+340         turingMachine.position -= 1; 
+341     } 
+342     return turingMachine; 
+343 }; 
+344 
+ 
+345 /** 
+346  * Given a Turing Machine, get the value for the tape 
+347  * at the position the Turing Machine is currently on. 
+348  */ 
+349 var getTapeValue = function(turingMachine){ 
+350     var pos = turingMachine.position; 
+351     if (pos >= 0){ 
+352         if (turingMachine.posArr[pos] === undefined){ 
+353             // Spaces we don't know about are blank. 
+354             return ""; 
+355         } 
+356         return turingMachine.posArr[pos]; 
+357     } else{ 
+358         if (turingMachine.negArr[(-pos) - 1] === undefined){ 
+359             // Spaces we don't know about are blank. 
+360             return "";    
+361         } 
+362         return turingMachine.negArr[(-pos) - 1]; 
+363     } 
+364 }; 
+365 
+ 
+366 /** 
+367  * Write the given value to the Turing Machine's tape 
+368  * at the current position. 
+369  */ 
+370 var setTapeValue = function(turingMachine, val){ 
+371     if (!isValidChar(val, turingMachine)){ 
+372         debug("Tried to set invalid character " + val + "!"); 
+373         // If this character isn't valid, 
+374         // just set a blank character 
+375         val = ""; 
+376     } 
+377     var pos = turingMachine.position; 
+378     if (pos >= 0){ 
+379         turingMachine.posArr[pos] = val; 
+380     } else{ 
+381         turingMachine.negArr[(-pos) - 1] = val; 
+382     } 
+383     return turingMachine; 
+384 }; 
+385 
+ 
+386 /** 
+387  * Given a Turing Machine, run the next step in its execution. 
+388  */ 
+389 var nextStep = function(turingMachine){ 
+390     var tapeValue = getTapeValue(turingMachine); 
+391     var state = turingMachine.state; 
+392     var next = turingMachine.stateTransition[state][tapeValue]; 
+393     turingMachine = setTapeValue(turingMachine, next[0]); 
+394 
+ 
+395     turingMachine = move(turingMachine, next[1]); 
+396     drawTape(turingMachine, turingMachine.position); 
+397     turingMachine.state = next[2]; 
+398     return turingMachine; 
+399 }; 
+400 
+ 
+401 /** 
+402  * Draw the table of states, and highlight the current one 
+403  * in red. 
+404  */ 
+405 var table = function(){ 
+406     fill(0, 0, 0);  // Black text 
+407     // Write the table headers 
+408     text("State:", 10, 100); 
+409     text("Symbol:", 70, 100); 
+410     text("Write:", 160, 100); 
+411     text("Direction:", 210, 100); 
+412     text("Next state:", 290, 100); 
+413     // Line to separate the headers from the contents 
+414     line(0, 105, width, 105); 
+415     // The starting height of text for contents of the table 
+416     var yText = 120; 
+417     // Draw a line to separate the current state with the 
+418     // action we should take 
+419     line(130, 90, 130, 400); 
+420      
+421     for(var s in addOneMachine.stateTransition) { 
+422         var next = addOneMachine.stateTransition[s]; 
+423         if (s !== "stop") { 
+424             for (var c in addOneMachine.alphabet){ 
+425                 var char = addOneMachine.alphabet[c]; 
+426                 if (addOneMachine.state === s && 
+427                         char === getTapeValue(addOneMachine, 
+428                                 addOneMachine.position)){ 
+429                     fill(255, 0, 0); 
+430                 } 
+431                 text(s, 10, yText); // State 
+432                 text(char, 80 + 15, yText); // Number (Symbol) 
+433          
+434                 var moves = next[char]; 
+435                 text(moves[0], 160 + 15, yText); // Write 
+436                 text(moves[1], 210, yText); // Direction 
+437                 text(moves[2], 290, yText); // Next state   
+438              
+439                 fill(0, 0, 0); 
+440                 yText += 20; 
+441             } 
+442         } else{ 
+443             if (addOneMachine.state === s){ 
+444                 fill(255, 0, 0); 
+445             } 
+446             text(s, 10, yText); // State 
+447             yText += 20; 
+448         } 
+449     } 
+450 }; 
+451 
+ 
+452 var mousePressed = function() { 
+453     if (addOneMachine.posArr[0]===0 && addOneMachine.posArr[1]===0 && addOneMachine.posArr[2]===0){ 
+454         addOneMachine.state = "stop"; 
+455         drawTape(addOneMachine, 0); 
+456     } else{ 
+457         addOneMachine = nextStep(addOneMachine); 
+458     } 
+459     table(); 
+460 }; 
+461 
+ 
+462 addOneMachine = setTape(addOneMachine.startTape, addOneMachine); 
+463 drawTape(addOneMachine, 0); 
+464 textSize(20); 
+465 fill(0, 0, 0); 
+466 text("Click to run! (one click per step)", 50, 75); 
+467 textSize(12); 
+468 table(); 
